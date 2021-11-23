@@ -1,0 +1,17 @@
+let
+    Source = Excel.Workbook(File.Contents("C:\Users\ganes\Desktop\PowerBI\Data Sets\EmployeeData.xlsx"), null, true),
+    EmployeeData1_Sheet = Source{[Item="EmployeeData1",Kind="Sheet"]}[Data],
+    #"Promoted Headers" = Table.PromoteHeaders(EmployeeData1_Sheet, [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"EmployeeID", Int64.Type}, {"NationalIDNumber", Int64.Type}, {"ContactID", Int64.Type}, {"LoginID", type text}, {"ManagerID", Int64.Type}, {"Title", type text}, {"BirthDate", type datetime}, {"MaritalStatus", type text}, {"Gender", type text}, {"HireDate", type datetime}, {"Dept", type text}, {"Salary", Int64.Type}, {"Job Grade", type text}, {"CurrentFlag", Int64.Type}, {"rowguid", type text}}),
+    #"Removed National ID" = Table.RemoveColumns(#"Changed Type",{"NationalIDNumber"}),
+    #"Tittle to Full Name" = Table.RenameColumns(#"Removed National ID",{{"Title", "Full name"}}),
+    #"Date & time to Date" = Table.TransformColumnTypes(#"Tittle to Full Name",{{"BirthDate", type date}}),
+    #"rename to Last Name" = Table.ReplaceValue(#"Date & time to Date","S","Single",Replacer.ReplaceText,{"MaritalStatus"}),
+    #"DOB without Time" = Table.ReplaceValue(#"rename to Last Name","M","Married",Replacer.ReplaceText,{"MaritalStatus"}),
+    #"M to male" = Table.ReplaceValue(#"DOB without Time","M","Male",Replacer.ReplaceText,{"Gender"}),
+    #"F to Female" = Table.ReplaceValue(#"M to male","F","Female",Replacer.ReplaceText,{"Gender"}),
+    #"Splitting First name ,Last name" = Table.SplitColumn(#"F to Female", "Full name", Splitter.SplitTextByEachDelimiter({" "}, QuoteStyle.Csv, false), {"Full name.1", "Full name.2"}),
+    #"Changed Type2" = Table.TransformColumnTypes(#"Splitting First name ,Last name",{{"Full name.1", type text}, {"Full name.2", type text}}),
+    #"Ful name 1 to first name" = Table.RenameColumns(#"Changed Type2",{{"Full name.1", "First name"}, {"Full name.2", "Last Name"}})
+in
+    #"Ful name 1 to first name"
